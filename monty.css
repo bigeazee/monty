@@ -1474,6 +1474,180 @@
     display: flex;
     align-items: flex-start;
   }
+  /* ===== Snapshot banner & review mode ===== */
+  /* Banner is always present in the DOM so applyReviewMode can populate it
+     without re-creating nodes; only displayed when body.review-mode is set. */
+  .snapshot-banner {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: #e6f6f9;
+    border: 1px solid #b8e3ec;
+    border-left: 3px solid var(--brand-cyan);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  body.review-mode .snapshot-banner { display: flex; }
+  .snapshot-banner-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .snapshot-banner-body { flex: 1; min-width: 0; }
+  .snapshot-banner-title {
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .snapshot-banner-meta {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .snapshot-banner-pill {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--brand-cyan);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  /* Hide elements that have no role in a read-only snapshot. */
+  body.review-mode #quickstart-section,
+  body.review-mode #advanced-section,
+  body.review-mode .priority-hint,
+  body.review-mode #items-section .actions,
+  body.review-mode .items-table .delete-btn,
+  body.review-mode .items-table .drag-grip,
+  body.review-mode #controls-section .controls,
+  body.review-mode #runBtn { display: none !important; }
+  body.review-mode .items-table .drag-handle { cursor: default; }
+  /* The controls block is replaced with a read-only summary row. */
+  body.review-mode #controls-section .controls-summary { display: flex; }
+  .controls-summary {
+    display: none;
+    flex-wrap: wrap;
+    gap: 14px 32px;
+    padding: 14px 18px;
+    background: var(--surface-2);
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .controls-summary-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .controls-summary-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .controls-summary-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+    color: var(--ink);
+    font-weight: 600;
+  }
+  /* Inputs stay visible (so the items table reads naturally) but are inert. */
+  body.review-mode input,
+  body.review-mode select,
+  body.review-mode textarea {
+    pointer-events: none;
+    background: var(--surface-2) !important;
+    color: var(--ink-2) !important;
+    border-color: var(--hairline) !important;
+    box-shadow: none !important;
+  }
+  body.review-mode .items-table input:hover,
+  body.review-mode .items-table select:hover {
+    background: var(--surface-2) !important;
+    border-color: transparent !important;
+  }
+  body.review-mode .parallelism-control input[type="range"] { opacity: 0.55; }
+
+  /* ===== Snapshot export modal ===== */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(43, 47, 59, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-card {
+    background: var(--surface);
+    border-radius: 6px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    max-width: 460px;
+    width: 100%;
+    padding: 24px 26px 22px;
+  }
+  .modal-card h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .modal-help {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+  .modal-card .field { margin-bottom: 14px; }
+  .modal-card .field label {
+    display: block;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+  .modal-card .field input {
+    font-family: inherit;
+    font-size: 14px;
+    width: 100%;
+    border: 1px solid var(--hairline);
+    border-radius: 3px;
+    padding: 8px 10px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .modal-card .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .modal-error {
+    font-size: 12.5px;
+    color: var(--critical);
+    margin-bottom: 10px;
+    min-height: 1.2em;
+  }
+
   /* ===== Responsive ===== */
   @media (max-width: 720px) {
     main { padding: 20px 14px 60px; }

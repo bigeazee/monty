@@ -39,6 +39,8 @@
     </div>
   </header>
 
+  <div id="snapshot-banner" class="snapshot-banner" role="status"></div>
+
   <section id="explainer-section">
     <details class="explainer">
       <summary class="explainer-summary">
@@ -132,6 +134,7 @@
   </section>
 
   <section id="controls-section">
+    <div class="controls-summary" id="controlsSummary"></div>
     <div class="controls">
       <div class="field">
         <label for="startDate">Start date</label>
@@ -283,6 +286,7 @@
           <textarea id="holidaysText" rows="6" style="font-family: var(--font-mono); font-size: 12px; border: 1px solid var(--hairline); background: var(--surface); padding: 8px; resize: vertical;"></textarea>
         </div>
         <div class="row-flex" style="margin-top: 16px;">
+          <button class="primary" id="exportSnapshotBtn">Export for stakeholder</button>
           <button class="subtle" id="exportBtn">Export state (JSON)</button>
           <button class="subtle" id="importStateBtn">Import state (JSON)</button>
           <input type="file" id="stateFile" accept=".json,application/json" style="display: none;">
@@ -305,6 +309,26 @@
 </main>
 
 <div id="ganttTooltip" role="tooltip"></div>
+
+<div id="snapshotModal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="snapshotModalTitle">
+  <div class="modal-card">
+    <h2 id="snapshotModalTitle">Export for stakeholder</h2>
+    <p class="modal-help">Builds a self-contained HTML file frozen at this forecast — stakeholders can open it in any browser, see the charts and tooltips, but can't edit inputs or rerun.</p>
+    <div class="field">
+      <label for="snapshotTitle">Title</label>
+      <input type="text" id="snapshotTitle" placeholder="e.g. Q2 readout for NHSE" maxlength="120">
+    </div>
+    <div class="field">
+      <label for="snapshotAuthor">Author</label>
+      <input type="text" id="snapshotAuthor" maxlength="80">
+    </div>
+    <div class="modal-error" id="snapshotError"></div>
+    <div class="modal-actions">
+      <button class="subtle" id="snapshotCancel">Cancel</button>
+      <button class="primary" id="snapshotConfirm">Export</button>
+    </div>
+  </div>
+</div>
 
 <script src="monty.js"></script>
 </body>
