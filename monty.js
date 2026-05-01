@@ -1881,6 +1881,17 @@ function renderItemTable(r, calendar) {
     if (state.params && state.params.simCount) {
       document.getElementById('meta-sims').textContent = state.params.simCount;
     }
+
+    // Make every form control and button truly inert. CSS hides what
+    // shouldn't be visible at all (run, delete, drag-grip, advanced);
+    // `disabled` here ensures the visible inputs (items table, bases,
+    // profile, holidays) cannot be focused, typed in, or activated via
+    // keyboard either. pointer-events:none alone leaves keyboard paths
+    // open — users could still tab in and type, which made the snapshot
+    // feel editable even though state mutations were skipped under the hood.
+    document.querySelectorAll('input, select, textarea, button').forEach(el => {
+      el.disabled = true;
+    });
   }
 
   // Replace the raw simulation array with a 24-bin histogram. The

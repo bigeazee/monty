@@ -1563,7 +1563,11 @@
     color: var(--ink);
     font-weight: 600;
   }
-  /* Inputs stay visible (so the items table reads naturally) but are inert. */
+  /* Inputs stay visible (so the items table reads naturally) but are inert.
+     applyReviewMode also sets the `disabled` attribute on every form
+     control — that's what blocks keyboard focus and typing; the rules
+     here just keep the look consistent (browsers default to opacity:0.6
+     and grey text on disabled inputs, which would clash with our chrome). */
   body.review-mode input,
   body.review-mode select,
   body.review-mode textarea {
@@ -1572,13 +1576,16 @@
     color: var(--ink-2) !important;
     border-color: var(--hairline) !important;
     box-shadow: none !important;
+    opacity: 1 !important;
+    cursor: default !important;
+    -webkit-text-fill-color: var(--ink-2) !important;  /* override Safari's forced grey on :disabled */
   }
   body.review-mode .items-table input:hover,
   body.review-mode .items-table select:hover {
     background: var(--surface-2) !important;
     border-color: transparent !important;
   }
-  body.review-mode .parallelism-control input[type="range"] { opacity: 0.55; }
+  body.review-mode .parallelism-control input[type="range"] { opacity: 0.55 !important; }
 
   /* ===== Snapshot export modal ===== */
   .modal-backdrop {
