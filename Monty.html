@@ -9,39 +9,41 @@
 <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200;0,6..12,300;0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,300;1,6..12,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    /* GEL brand palette */
-    --gel-dark-blue: #2b2f3b;
-    --gel-nhs-blue: #005eb8;
-    --gel-cyan: #07c5f5;
-    --gel-green: #26913d;
-    --gel-light-green: #71c52d;
-    --gel-yellow: #ffb300;
-    --gel-magenta: #df007d;
-    --gel-grey: #c3c4bf;
+    /* Monty brand palette */
+    --brand-blue: #005eb8;
+    --brand-blue-deep: #003d7a;
+    --brand-blue-soft: #cce4f3;
+    --brand-blue-tint: #e6eef7;
+    --brand-dark: #2b2f3b;
+    --brand-pink: #df007d;
+    --brand-green: #26913d;
+    --brand-amber: #ffb300;
+    --brand-cyan: #07c5f5;
     /* Surfaces and tints */
     --bg: #ffffff;
     --surface: #ffffff;
     --surface-2: #f5f7fa;
-    --surface-3: #e6eef7;
+    --surface-3: var(--brand-blue-tint);
     --hairline: #e5e7eb;
     --hairline-strong: #c7cdd4;
     /* Text */
-    --ink: var(--gel-dark-blue);
-    --ink-2: #4a5060;
-    --muted: #7a8090;
-    --on-blue: #ffffff;
+    --ink: var(--brand-dark);
+    --ink-2: #475569;
+    --muted: #64748b;
+    --on-accent: #ffffff;
+    --on-blue: #ffffff;            /* legacy alias - some CSS still references this */
     /* Accents */
-    --accent: var(--gel-nhs-blue);
-    --accent-deep: #003d7a;
-    --accent-soft: #cce4f3;
-    --positive: var(--gel-green);
-    --warn: var(--gel-yellow);
-    --critical: var(--gel-magenta);
-    /* Percentile palette */
-    --p50: var(--gel-dark-blue);
-    --p80: var(--gel-nhs-blue);
-    --p90: var(--gel-cyan);
-    /* Typography (Nunito Sans as Avenir alternative) */
+    --accent: var(--brand-blue);
+    --accent-deep: var(--brand-blue-deep);
+    --accent-soft: var(--brand-blue-soft);
+    --positive: var(--brand-green);
+    --warn: var(--brand-amber);
+    --critical: var(--brand-pink);
+    /* Percentile palette - P50 confident (dark), P80 brand (blue), P90 risk (pink) */
+    --p50: var(--brand-dark);
+    --p80: var(--brand-blue);
+    --p90: var(--brand-pink);
+    /* Typography */
     --font-sans: 'Nunito Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   }
@@ -388,22 +390,22 @@
     line-height: 1.45;
   }
   /* Per-percentile accent colours */
-  .stat.stat-p50 { border-top-color: var(--gel-dark-blue); }
+  .stat.stat-p50 { border-top-color: var(--p50); }
   .stat.stat-p50 .eyebrow,
-  .stat.stat-p50 .eyebrow::before { color: var(--gel-dark-blue); }
-  .stat.stat-p50 .eyebrow::before { background: var(--gel-dark-blue); }
-  .stat.stat-p80 { border-top-color: var(--gel-nhs-blue); }
-  .stat.stat-p80 .eyebrow { color: var(--gel-nhs-blue); }
-  .stat.stat-p80 .eyebrow::before { background: var(--gel-nhs-blue); }
+  .stat.stat-p50 .eyebrow::before { color: var(--p50); }
+  .stat.stat-p50 .eyebrow::before { background: var(--p50); }
+  .stat.stat-p80 { border-top-color: var(--p80); }
+  .stat.stat-p80 .eyebrow { color: var(--p80); }
+  .stat.stat-p80 .eyebrow::before { background: var(--p80); }
   .stat.stat-p80 .slip-badge {
-    background: rgba(0, 94, 184, 0.08);
-    color: var(--gel-nhs-blue);
+    background: rgba(15, 118, 110, 0.08);
+    color: var(--p80);
   }
   .stat.stat-p90 { border-top-color: var(--critical); }
   .stat.stat-p90 .eyebrow { color: var(--critical); }
   .stat.stat-p90 .eyebrow::before { background: var(--critical); }
   .stat.stat-p90 .slip-badge {
-    background: rgba(223, 0, 125, 0.08);
+    background: rgba(249, 115, 22, 0.08);
     color: var(--critical);
   }
   .stat.stat-effort { border-top-color: var(--ink-2); }
@@ -916,7 +918,7 @@
   .legend .swatch.milestone-swatch {
     width: 10px;
     height: 10px;
-    background: var(--gel-dark-blue);
+    background: var(--p50);
     transform: rotate(45deg);
     border-radius: 0;
     margin-right: 8px;
@@ -952,9 +954,9 @@
     color: var(--muted);
     font-weight: 500;
   }
-  .pill.high { color: var(--critical); border-color: var(--critical); background: rgba(223, 0, 125, 0.06); }
+  .pill.high { color: var(--critical); border-color: var(--critical); background: rgba(249, 115, 22, 0.07); }
   .pill.medium { color: var(--warn); border-color: var(--warn); background: rgba(255, 179, 0, 0.08); }
-  .pill.low { color: var(--positive); border-color: var(--positive); background: rgba(38, 145, 61, 0.06); }
+  .pill.low { color: var(--positive); border-color: var(--positive); background: rgba(16, 185, 129, 0.06); }
   details > summary {
     cursor: pointer;
     list-style: none;
@@ -1261,7 +1263,7 @@
     font-family: var(--font-mono);
   }
   .version-card .vrow.p50 .vlabel { color: var(--ink); }
-  .version-card .vrow.p80 .vlabel { color: var(--gel-nhs-blue); }
+  .version-card .vrow.p80 .vlabel { color: var(--p80); }
   .version-card .vrow.p90 .vlabel { color: var(--critical); }
   .version-card .vrow .vdate {
     color: var(--ink);
@@ -1382,7 +1384,7 @@
     pointer-events: none;
     max-width: 360px;
     min-width: 240px;
-    box-shadow: 0 8px 24px rgba(43, 47, 59, 0.18), 0 2px 6px rgba(43, 47, 59, 0.08);
+    box-shadow: 0 8px 24px rgba(30, 41, 59, 0.18), 0 2px 6px rgba(30, 41, 59, 0.08);
     font-size: 13px;
   }
   #ganttTooltip .tt-name {
@@ -1889,12 +1891,10 @@
       },
     },
 
-    // localStorage keys. Note: state key is the legacy "sdmblue" name —
-    // do NOT rename without a migration path; renaming wipes user state.
-    // History and actuals keys (added in feature 2/3) use the "monty"
-    // prefix going forward.
+    // localStorage keys. The state key uses the "monty" prefix; future
+    // history and actuals keys (added in features 2/3) follow the same.
     storageKeys: {
-      state:   "sdmblue_forecast_v1",
+      state:   "monty_state_v1",
       // Future:
       // history: "monty_history_v1",
       // actuals: "monty_actuals_v1",
@@ -1994,47 +1994,73 @@
   // Read/write state to localStorage. Schema migrations live here.
   // Reads:  state (when saving), MONTY_CONFIG.storageKeys.state
   // Writes: state (when loading)
-  // External deps: window.storage (Anthropic Artifacts storage API)
+  // External deps: window.storage (Anthropic Artifacts) preferred,
+  //   with a transparent fallback to native localStorage for plain
+  //   `file://` opens and any static web host.
   // ============================================================
+
+  // Storage adapter: prefers window.storage (the Artifacts async key/value
+  // store) when present, otherwise uses native localStorage. Both paths
+  // expose the same async surface so callers don't need to branch.
+  const storageAdapter = (function () {
+    if (typeof window !== "undefined" && window.storage &&
+        typeof window.storage.get === "function") {
+      return {
+        async get(k) {
+          const r = await window.storage.get(k);
+          return r && r.value ? r.value : null;
+        },
+        async set(k, v) { await window.storage.set(k, v); },
+      };
+    }
+    if (typeof localStorage !== "undefined") {
+      return {
+        async get(k) { return localStorage.getItem(k); },
+        async set(k, v) { localStorage.setItem(k, v); },
+      };
+    }
+    // No storage available (e.g. some sandboxed contexts) — every call no-ops.
+    return {
+      async get() { return null; },
+      async set() { /* no-op */ },
+    };
+  })();
 
   async function saveState() {
     try {
-    if (!window.storage) return;
-    const payload = {
-      schemaVersion: CURRENT_SCHEMA_VERSION,  // v3: bases in person-weeks (was v2 person-days)
-      items: state.items,
-      bases: state.bases,
-      uncertaintyProfile: state.uncertaintyProfile,
-      params: state.params,
-      holidays: state.holidays,
-    };
-    await window.storage.set(STATE_KEY, JSON.stringify(payload));
-  } catch (e) { /* ignore */ }
-}
+      const payload = {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        items: state.items,
+        bases: state.bases,
+        uncertaintyProfile: state.uncertaintyProfile,
+        params: state.params,
+        holidays: state.holidays,
+      };
+      await storageAdapter.set(STATE_KEY, JSON.stringify(payload));
+    } catch (e) { /* ignore — persistence is best-effort */ }
+  }
 
-async function loadState() {
-  try {
-    if (!window.storage) return;
-    const r = await window.storage.get(STATE_KEY);
-    if (r && r.value) {
-      const saved = JSON.parse(r.value);
-      const savedVersion = saved.schemaVersion || 1;
+  async function loadState() {
+    try {
+      const raw = await storageAdapter.get(STATE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      // schemaVersion currently only exists at v3; older shapes are ignored.
       if (saved.items) state.items = saved.items;
-      // Bases are stored internally in person-days (same in v2 and v3 — the UI displays
-      // them as weeks but storage is days). No conversion needed between versions.
+      // Bases stored in person-days (UI shows weeks). No version conversion needed.
       if (saved.bases) {
         state.bases = { ...DEFAULT_BASES, ...saved.bases };
       }
-      if (saved.uncertaintyProfile) state.uncertaintyProfile = { ...DEFAULT_UNCERTAINTY_PROFILE, ...saved.uncertaintyProfile };
-      // v1 schema (legacy matrix) — silently discarded; user gets defaults for new model
+      if (saved.uncertaintyProfile) {
+        state.uncertaintyProfile = { ...DEFAULT_UNCERTAINTY_PROFILE, ...saved.uncertaintyProfile };
+      }
       if (saved.params) {
         const { lowSpread, ...rest } = saved.params;  // strip removed param
         state.params = { ...DEFAULT_PARAMS, ...rest };
       }
       if (saved.holidays) state.holidays = saved.holidays;
-    }
-  } catch (e) { /* fallback to defaults */ }
-}
+    } catch (e) { /* fallback to defaults */ }
+  }
 
   // ============================================================
   // MODULE: csv
@@ -3165,12 +3191,12 @@ function renderGantt(r, calendar) {
   const xWiStart = (workingIdx) => x(workingIdxToCalDays(workingIdx, calendar, "start"));
   const xWiEnd = (workingIdx) => x(workingIdxToCalDays(workingIdx, calendar, "end"));
 
-  // GEL palette
+  // Brand palette
   const C_DARK = "#2b2f3b";
-  const C_NHS = "#005eb8";
-  const C_NHS_SOFT = "#cce4f3";
+  const C_BLUE = "#005eb8";
+  const C_BLUE_SOFT = "#cce4f3";
   const C_GREEN = "#26913d";
-  const C_MAGENTA = "#df007d";
+  const C_PINK = "#df007d";
   const C_HAIR = "#e5e7eb";
   const C_NONWORK = "#f0f1f4";
   const C_MUTED = "#7a8090";
@@ -3228,7 +3254,7 @@ function renderGantt(r, calendar) {
   }
 
   // Overall percentile vertical lines (subtle, since milestones do most of the per-release work)
-  [["p50", C_DARK, "0"], ["p80", C_NHS, "4,3"], ["p90", C_MAGENTA, "2,3"]].forEach(([k, color, dash]) => {
+  [["p50", C_DARK, "0"], ["p80", C_BLUE, "4,3"], ["p90", C_PINK, "2,3"]].forEach(([k, color, dash]) => {
     const xv = xWiEnd(r.overall[k]);
     svg += `<line x1="${xv}" y1="${chartTop}" x2="${xv}" y2="${itemsBottom + 4}" stroke="${color}" stroke-width="1" stroke-dasharray="${dash}" opacity="0.4" />`;
   });
@@ -3256,8 +3282,8 @@ function renderGantt(r, calendar) {
       const endP50 = xWiEnd(it.end.p50);
       const endP90 = xWiEnd(it.end.p90);
       // Visible: P10-P90 spread bar (light) + P50 bar (solid) + end-cap circle
-      svg += `<rect x="${startX}" y="${y + 9}" width="${Math.max(1, endP90 - startX)}" height="4" fill="${C_NHS_SOFT}" rx="2" />`;
-      svg += `<rect x="${startP50}" y="${y + 6}" width="${Math.max(2, endP50 - startP50)}" height="10" fill="${C_NHS}" rx="2" />`;
+      svg += `<rect x="${startX}" y="${y + 9}" width="${Math.max(1, endP90 - startX)}" height="4" fill="${C_BLUE_SOFT}" rx="2" />`;
+      svg += `<rect x="${startP50}" y="${y + 6}" width="${Math.max(2, endP50 - startP50)}" height="10" fill="${C_BLUE}" rx="2" />`;
       svg += `<circle cx="${endP50}" cy="${y + 11}" r="3" fill="${C_DARK}"/>`;
       // Hit area: covers the full P10-P90 span at row height, with a small horizontal pad
       // for easier targeting. Only over the bar itself - never the empty row gutter.
@@ -3297,8 +3323,8 @@ function renderGantt(r, calendar) {
 
       svg += `<g class="gantt-milestone" data-version-key="${escapeXml(v)}" style="cursor: pointer;">`;
       // Whisker P50 to P90 (slip range), with right tick at P90
-      svg += `<line x1="${xP50}" y1="${milestoneY}" x2="${xP90}" y2="${milestoneY}" stroke="${C_NHS}" stroke-width="2" stroke-linecap="round" />`;
-      svg += `<line x1="${xP90}" y1="${milestoneY - 5}" x2="${xP90}" y2="${milestoneY + 5}" stroke="${C_NHS}" stroke-width="1.5" stroke-linecap="round" />`;
+      svg += `<line x1="${xP50}" y1="${milestoneY}" x2="${xP90}" y2="${milestoneY}" stroke="${C_BLUE}" stroke-width="2" stroke-linecap="round" />`;
+      svg += `<line x1="${xP90}" y1="${milestoneY - 5}" x2="${xP90}" y2="${milestoneY + 5}" stroke="${C_BLUE}" stroke-width="1.5" stroke-linecap="round" />`;
       // Diamond at P50
       const ds = 6;
       svg += `<polygon points="${xP50},${milestoneY - ds} ${xP50 + ds},${milestoneY} ${xP50},${milestoneY + ds} ${xP50 - ds},${milestoneY}" fill="${C_DARK}" stroke="white" stroke-width="1.5" />`;
@@ -3316,12 +3342,12 @@ function renderGantt(r, calendar) {
 
   const legend = `
     <div class="legend">
-      <span><span class="swatch bar" style="background: ${C_NHS};"></span>P50 schedule</span>
-      <span><span class="swatch bar" style="background: ${C_NHS_SOFT};"></span>P10–P90 spread</span>
+      <span><span class="swatch bar" style="background: ${C_BLUE};"></span>P50 schedule</span>
+      <span><span class="swatch bar" style="background: ${C_BLUE_SOFT};"></span>P10–P90 spread</span>
       ${versionKeys.length > 0 ? `<span><span class="swatch milestone-swatch"></span>Release P50 → P90 slip</span>` : ''}
       <span><span class="swatch" style="background: ${C_DARK};"></span>Overall P50</span>
-      <span><span class="swatch" style="background: ${C_NHS};"></span>Overall P80</span>
-      <span><span class="swatch" style="background: ${C_MAGENTA};"></span>Overall P90</span>
+      <span><span class="swatch" style="background: ${C_BLUE};"></span>Overall P80</span>
+      <span><span class="swatch" style="background: ${C_PINK};"></span>Overall P90</span>
       <span><span class="swatch" style="background: ${C_GREEN};"></span>Today</span>
       <span><span class="swatch bar" style="background: ${C_NONWORK};"></span>Weekend / bank hol.</span>
     </div>`;
@@ -3363,8 +3389,8 @@ function renderHistogram(r, calendar) {
   const xv = v => padL + ((v - min) / (max - min || 1)) * innerW;
 
   const C_DARK = "#2b2f3b";
-  const C_NHS = "#005eb8";
-  const C_MAGENTA = "#df007d";
+  const C_BLUE = "#005eb8";
+  const C_PINK = "#df007d";
   const C_HAIR = "#e5e7eb";
   const C_HAIR_STRONG = "#c7cdd4";
   const C_MUTED = "#7a8090";
@@ -3376,7 +3402,7 @@ function renderHistogram(r, calendar) {
     const x0 = xb(i);
     const x1 = xb(i + 1);
     const h = (c / maxCount) * innerH;
-    svg += `<rect x="${x0 + 0.5}" y="${padT + innerH - h}" width="${Math.max(0.5, x1 - x0 - 1)}" height="${h}" fill="${C_NHS}" opacity="0.85" rx="1" />`;
+    svg += `<rect x="${x0 + 0.5}" y="${padT + innerH - h}" width="${Math.max(0.5, x1 - x0 - 1)}" height="${h}" fill="${C_BLUE}" opacity="0.85" rx="1" />`;
   });
 
   // Baseline
@@ -3387,8 +3413,8 @@ function renderHistogram(r, calendar) {
   // and labels that overlap in x are pushed onto a higher row.
   const percentiles = [
     { k: "p50", color: C_DARK, label: "P50", dash: "0" },
-    { k: "p80", color: C_NHS, label: "P80", dash: "4,3" },
-    { k: "p90", color: C_MAGENTA, label: "P90", dash: "2,3" },
+    { k: "p80", color: C_BLUE, label: "P80", dash: "4,3" },
+    { k: "p90", color: C_PINK, label: "P90", dash: "2,3" },
   ].map(p => ({ ...p, x: xv(r.overall[p.k]) }));
 
   // Three label rows above the chart (closest to chart = row 0)
