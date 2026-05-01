@@ -133,6 +133,12 @@
     ...MONTY_CONFIG.defaults.params,
   };
 
+  // True when this page is loaded from a stakeholder snapshot HTML
+  // (detected at boot via the embedded #monty-snapshot-data tag).
+  // Mutating event handlers and persistence are skipped while this is set.
+  let IS_SNAPSHOT = false;
+  let SNAPSHOT_META = null;
+
   // ============================================================
   // MODULE: profile-helpers
   // Pure utilities for working with uncertainty profiles.
@@ -691,6 +697,10 @@ function renderItems() {
     `;
     tbody.appendChild(tr);
   });
+
+  // In snapshot mode the table is read-only — skip wiring up edit, delete,
+  // and drag handlers entirely.
+  if (IS_SNAPSHOT) return;
 
   tbody.querySelectorAll("input[data-field], select[data-field]").forEach(el => {
     el.addEventListener("change", e => {
@@ -1568,16 +1578,29 @@ function workingDayIndex(date, calendar) {
 }
 
 function renderHistogram(r, calendar) {
-  const data = r.overall.all;
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const nBins = 24;
+  // Two input shapes are supported:
+  //   - r.overall.all  : raw simulation array (live runs)
+  //   - r.overall.bins : { min, max, counts, total } (snapshot exports
+  //     pre-bin to keep file size down — the raw array can be 50-200 KB)
+  let min, max, nBins, bins, total;
+  if (r.overall.bins) {
+    ({ min, max, total } = r.overall.bins);
+    bins = r.overall.bins.counts;
+    nBins = bins.length;
+  } else {
+    const data = r.overall.all;
+    min = Math.min(...data);
+    max = Math.max(...data);
+    nBins = 24;
+    const binW0 = (max - min) / nBins || 1;
+    bins = new Array(nBins).fill(0);
+    data.forEach(v => {
+      const b = Math.min(nBins - 1, Math.floor((v - min) / binW0));
+      bins[b]++;
+    });
+    total = data.length;
+  }
   const binW = (max - min) / nBins || 1;
-  const bins = new Array(nBins).fill(0);
-  data.forEach(v => {
-    const b = Math.min(nBins - 1, Math.floor((v - min) / binW));
-    bins[b]++;
-  });
   const maxCount = Math.max(...bins);
 
   const W = 1040, padL = 28, padR = 24, padT = 64, padB = 50;
@@ -1672,7 +1695,7 @@ function renderHistogram(r, calendar) {
   svg += `</svg>`;
 
   return `<div class="chart-card">
-    <div class="chart-title">Distribution of overall completion · ${data.length} simulations</div>
+    <div class="chart-title">Distribution of overall completion · ${total} simulations</div>
     ${svg}
   </div>`;
 }
@@ -1739,6 +1762,279 @@ function renderItemTable(r, calendar) {
     </table>
   </div>`;
 }
+
+  // ============================================================
+  // MODULE: snapshot
+  // Stakeholder snapshot export: produces a self-contained read-only
+  // HTML file frozen at the current forecast. The export inlines
+  // monty.css and monty.js into the resulting document and embeds the
+  // state + results as base64 JSON in a <script id="monty-snapshot-data">
+  // tag, which the boot path (init) detects and uses to hydrate.
+  // Reads:  state.*, MONTY_CONFIG (when exporting)
+  // Writes: state.* (only when LOADING a snapshot at boot)
+  // External deps: fetch (for monty.css/monty.js bodies), DOM, btoa/atob
+  // ============================================================
+
+  // Detect a snapshot payload baked into the current page. Called once
+  // at boot, before loadState. If found, populates `state` from the
+  // payload and sets IS_SNAPSHOT so the rest of the app skips
+  // persistence and mutating handlers.
+  function detectSnapshot() {
+    const tag = document.getElementById('monty-snapshot-data');
+    if (!tag) return false;
+    try {
+      const b64 = (tag.textContent || '').trim();
+      if (!b64) return false;
+      const json = decodeURIComponent(escape(atob(b64)));
+      const payload = JSON.parse(json);
+      if (!payload || !payload.state) return false;
+
+      const s = payload.state;
+      if (s.items) state.items = s.items;
+      if (s.bases) state.bases = { ...DEFAULT_BASES, ...s.bases };
+      if (s.uncertaintyProfile) state.uncertaintyProfile = { ...DEFAULT_UNCERTAINTY_PROFILE, ...s.uncertaintyProfile };
+      if (s.params) {
+        const { lowSpread, ...rest } = s.params;  // strip removed param, matching loadState
+        state.params = { ...DEFAULT_PARAMS, ...rest };
+      }
+      if (s.holidays) state.holidays = s.holidays;
+      state.results = payload.results || null;
+
+      IS_SNAPSHOT = true;
+      SNAPSHOT_META = payload.meta || {};
+      return true;
+    } catch (e) {
+      // Malformed snapshot — fall through to normal boot. Logging is fine
+      // because this only fires on dedicated snapshot files.
+      console.error('Monty: failed to decode embedded snapshot:', e);
+      return false;
+    }
+  }
+
+  function formatSnapshotTimestamp(iso) {
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return iso;
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const dd = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${dd} ${months[d.getMonth()]} ${d.getFullYear()} at ${hh}:${mm}`;
+    } catch (e) { return iso; }
+  }
+
+  // Apply review-mode chrome: body class, banner contents, controls
+  // summary. Called only when IS_SNAPSHOT is true, after the initial render.
+  function applyReviewMode() {
+    document.body.classList.add('review-mode');
+
+    const banner = document.getElementById('snapshot-banner');
+    if (banner && SNAPSHOT_META) {
+      const created = SNAPSHOT_META.createdLocal ||
+        (SNAPSHOT_META.createdISO ? formatSnapshotTimestamp(SNAPSHOT_META.createdISO) : '');
+      const author = SNAPSHOT_META.author || 'Unknown';
+      banner.innerHTML = `
+        <span class="snapshot-banner-icon" aria-hidden="true">📌</span>
+        <div class="snapshot-banner-body">
+          <div class="snapshot-banner-title">${escapeHtml(SNAPSHOT_META.title || 'Snapshot')}</div>
+          <div class="snapshot-banner-meta">${escapeHtml(author)} · ${escapeHtml(created)}</div>
+        </div>
+        <span class="snapshot-banner-pill">Read only</span>
+      `;
+    }
+
+    const summary = document.getElementById('controlsSummary');
+    if (summary) {
+      const p = state.params;
+      const distLabel = p.distribution === 'uniform' ? 'Uniform' : 'Triangular';
+      summary.innerHTML = `
+        <div class="controls-summary-item">
+          <span class="controls-summary-label">Start date</span>
+          <span class="controls-summary-value">${escapeHtml(p.startDate || '—')}</span>
+        </div>
+        <div class="controls-summary-item">
+          <span class="controls-summary-label">Team size</span>
+          <span class="controls-summary-value">${p.headcount} FTE</span>
+        </div>
+        <div class="controls-summary-item">
+          <span class="controls-summary-label">Default people / item</span>
+          <span class="controls-summary-value">${p.peoplePerJob}</span>
+        </div>
+        <div class="controls-summary-item">
+          <span class="controls-summary-label">Simulations</span>
+          <span class="controls-summary-value">${p.simCount}</span>
+        </div>
+        <div class="controls-summary-item">
+          <span class="controls-summary-label">Distribution</span>
+          <span class="controls-summary-value">${distLabel}</span>
+        </div>
+      `;
+    }
+
+    // The meta header values that runForecast normally sets — surface the
+    // snapshot's own timestamp and sim count instead.
+    if (SNAPSHOT_META) {
+      const ts = SNAPSHOT_META.createdLocal ||
+        (SNAPSHOT_META.createdISO ? formatSnapshotTimestamp(SNAPSHOT_META.createdISO) : '');
+      if (ts) document.getElementById('meta-lastrun').textContent = ts;
+    }
+    if (state.params && state.params.simCount) {
+      document.getElementById('meta-sims').textContent = state.params.simCount;
+    }
+  }
+
+  // Replace the raw simulation array with a 24-bin histogram. The
+  // histogram render path accepts either shape; bins keep the snapshot
+  // file 30-180 KB smaller.
+  function prebinResultsForSnapshot(r) {
+    const out = JSON.parse(JSON.stringify(r));
+    if (out.overall && Array.isArray(out.overall.all)) {
+      const data = out.overall.all;
+      const min = Math.min(...data);
+      const max = Math.max(...data);
+      const nBins = 24;
+      const binW = (max - min) / nBins || 1;
+      const counts = new Array(nBins).fill(0);
+      data.forEach(v => {
+        const b = Math.min(nBins - 1, Math.floor((v - min) / binW));
+        counts[b]++;
+      });
+      out.overall.bins = { min, max, counts, total: data.length };
+      delete out.overall.all;
+    }
+    return out;
+  }
+
+  function slugify(s) {
+    return String(s || '').toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60) || 'snapshot';
+  }
+
+  // base64-encode a JSON string with full Unicode support (item names
+  // can contain arbitrary characters). The escape/unescape pair is the
+  // standard idiom for utf-8-safe btoa.
+  function encodeSnapshotPayload(payload) {
+    const json = JSON.stringify(payload);
+    return btoa(unescape(encodeURIComponent(json)));
+  }
+
+  // Build the self-contained snapshot HTML by cloning the current
+  // document and substituting the external CSS/JS references for inline
+  // <style> and <script> blocks (with the data tag inserted just before
+  // the inlined script so detectSnapshot can find it on load).
+  async function buildSnapshotHTML(snapshotB64) {
+    let css, js;
+    try {
+      const [cssRes, jsRes] = await Promise.all([
+        fetch('monty.css'),
+        fetch('monty.js'),
+      ]);
+      if (!cssRes.ok) throw new Error('monty.css ' + cssRes.status);
+      if (!jsRes.ok) throw new Error('monty.js ' + jsRes.status);
+      [css, js] = await Promise.all([cssRes.text(), jsRes.text()]);
+    } catch (e) {
+      throw new Error("Couldn't load monty.css / monty.js. Snapshot export needs the app to be served (it doesn't work from file:// in Chrome). Try GitHub Pages or any local web server.");
+    }
+
+    const root = document.documentElement.cloneNode(true);
+
+    // The export modal lives in the live DOM — strip it from the snapshot.
+    const modal = root.querySelector('#snapshotModal');
+    if (modal) modal.remove();
+    // Banner state is overwritten at boot, but clear it for cleanliness.
+    const banner = root.querySelector('#snapshot-banner');
+    if (banner) banner.innerHTML = '';
+
+    // Inline the stylesheet.
+    root.querySelectorAll('link[rel="stylesheet"][href="monty.css"]').forEach(link => {
+      const style = document.createElement('style');
+      style.textContent = css;
+      link.replaceWith(style);
+    });
+
+    // Inline the script and embed the snapshot data tag immediately before it.
+    root.querySelectorAll('script[src="monty.js"]').forEach(scr => {
+      const dataScript = document.createElement('script');
+      dataScript.id = 'monty-snapshot-data';
+      dataScript.type = 'application/json';
+      dataScript.textContent = snapshotB64;
+
+      const codeScript = document.createElement('script');
+      codeScript.textContent = js;
+
+      const parent = scr.parentNode;
+      parent.insertBefore(dataScript, scr);
+      parent.insertBefore(codeScript, scr);
+      parent.removeChild(scr);
+    });
+
+    return '<!DOCTYPE html>\n' + root.outerHTML;
+  }
+
+  async function exportSnapshot(title, author) {
+    // Either re-use the live results, or run a fresh forecast so the
+    // snapshot is internally consistent with the inputs being shown.
+    if (!state.results) {
+      const estimable = state.items.filter(i => i.size && i.uncertainty);
+      if (estimable.length === 0) {
+        throw new Error("Add at least one item with size and uncertainty before exporting.");
+      }
+      state.results = monteCarlo(state.items, state.bases, state.uncertaintyProfile, state.params, state.params.simCount);
+      state.lastRun = new Date();
+    }
+
+    const now = new Date();
+    const meta = {
+      title: (title || '').trim(),
+      author: (author || '').trim(),
+      createdISO: now.toISOString(),
+      createdLocal: formatSnapshotTimestamp(now.toISOString()),
+    };
+
+    const payload = {
+      schemaVersion: 1,
+      meta,
+      state: {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        items: state.items,
+        bases: state.bases,
+        uncertaintyProfile: state.uncertaintyProfile,
+        params: state.params,
+        holidays: state.holidays,
+      },
+      results: prebinResultsForSnapshot(state.results),
+    };
+
+    const b64 = encodeSnapshotPayload(payload);
+    const html = await buildSnapshotHTML(b64);
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `monty-snapshot-${todayISO()}-${slugify(meta.title)}.html`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function openSnapshotModal() {
+    const modal = document.getElementById('snapshotModal');
+    if (!modal) return;
+    document.getElementById('snapshotTitle').value = '';
+    document.getElementById('snapshotAuthor').value = 'Edwin Clark';
+    document.getElementById('snapshotError').textContent = '';
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('snapshotTitle').focus(), 30);
+  }
+
+  function closeSnapshotModal() {
+    const modal = document.getElementById('snapshotModal');
+    if (modal) modal.style.display = 'none';
+  }
 
   // ============================================================
   // MODULE: events
@@ -1909,6 +2205,40 @@ function attachHandlers() {
     saveState();
     render();
   });
+
+  // Stakeholder snapshot export
+  $("exportSnapshotBtn").addEventListener("click", openSnapshotModal);
+  $("snapshotCancel").addEventListener("click", closeSnapshotModal);
+  $("snapshotConfirm").addEventListener("click", async () => {
+    const title = $("snapshotTitle").value.trim();
+    const author = $("snapshotAuthor").value.trim() || "Edwin Clark";
+    if (!title) {
+      $("snapshotError").textContent = "Title is required.";
+      return;
+    }
+    const btn = $("snapshotConfirm");
+    btn.disabled = true;
+    btn.textContent = "Exporting…";
+    $("snapshotError").textContent = "";
+    try {
+      await exportSnapshot(title, author);
+      closeSnapshotModal();
+    } catch (e) {
+      $("snapshotError").textContent = e.message || String(e);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Export";
+    }
+  });
+  // Click outside the card closes the modal.
+  $("snapshotModal").addEventListener("click", e => {
+    if (e.target === e.currentTarget) closeSnapshotModal();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && $("snapshotModal").style.display !== "none") {
+      closeSnapshotModal();
+    }
+  });
 }
 
   // ============================================================
@@ -1958,15 +2288,29 @@ function render() {
     render: render,
     state: state,           // exposed read-mostly; do not mutate from outside
     config: MONTY_CONFIG,
+    exportSnapshot,         // programmatic snapshot export
+    isSnapshot: () => IS_SNAPSHOT,
   };
 
-  // Boot sequence: hydrate state from localStorage, wire up DOM events,
-  // do an initial render. The async wrapper is so loadState (which awaits
-  // window.storage) can complete before first render.
+  // Boot sequence:
+  //   1. detectSnapshot() — if the page contains an embedded snapshot,
+  //      hydrate state from it and skip persistence + event wiring.
+  //   2. otherwise loadState() from localStorage and attachHandlers()
+  //      as normal.
+  //   3. render() the UI from state.
+  //   4. applyReviewMode() if we're in snapshot mode (adds body class,
+  //      banner, controls summary).
+  // The async wrapper is so loadState (which awaits window.storage)
+  // can complete before first render.
   (async function init() {
-    await loadState();
-    attachHandlers();
+    if (!detectSnapshot()) {
+      await loadState();
+      attachHandlers();
+    }
     render();
+    if (IS_SNAPSHOT) {
+      applyReviewMode();
+    }
   })();
 
 })();  // end outer IIFE

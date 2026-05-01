@@ -24,18 +24,19 @@ to model coordination overhead (Brooks's law) without going off a cliff.
 
 ## Try it
 
-Open `monty.html` in any modern browser. That's it - no install, no build, no
+Open `index.html` in any modern browser. That's it - no install, no build, no
 backend. State persists in your browser's localStorage between visits.
 
 ```
 # clone, then:
-open monty.html        # macOS
-xdg-open monty.html    # Linux
-start monty.html       # Windows
+open index.html        # macOS
+xdg-open index.html    # Linux
+start index.html       # Windows
 ```
 
 Or [host it on GitHub Pages](https://docs.github.com/en/pages) with one click
-and share a URL with your team.
+and share a URL with your team. The repo layout is already Pages-ready —
+enable Pages on the `main` branch and the site loads at the root URL.
 
 ## How it works
 
@@ -49,16 +50,21 @@ For more depth on the design and roadmap, see [MONTY-ROADMAP.md](./MONTY-ROADMAP
 ## A note on storage
 
 Monty stores your scenario in your browser's localStorage, attached to the
-specific file location. **If you rename or move `monty.html`, you'll get fresh
+specific file location. **If you rename or move `index.html`, you'll get fresh
 empty state** because localStorage is keyed by file path on `file://`. To
 move state between file copies, use the JSON export/import buttons in the
 Advanced section.
 
 ## Project structure
 
-Single HTML file. All CSS and JavaScript inline. No external runtime
-dependencies (Google Fonts is loaded from CDN; the file works without it,
-just with system fonts).
+Three files, no build step:
+
+- `index.html` — markup and the page shell
+- `monty.css` — all styles
+- `monty.js` — the simulation, rendering, and event wiring
+
+No external runtime dependencies beyond Google Fonts (loaded from CDN; the
+app works without it, just with system fonts).
 
 The JavaScript is wrapped in an IIFE with twelve `// MODULE:` blocks for
 clarity. The only public global is `window.Monty`, which exposes:
@@ -70,7 +76,7 @@ window.Monty.state       // read-mostly access to current scenario
 window.Monty.config      // all defaults, presets, constants
 ```
 
-Open the file in any editor and search for `MODULE:` to navigate. See
+Open `monty.js` in any editor and search for `MODULE:` to navigate. See
 [MONTY-ROADMAP.md](./MONTY-ROADMAP.md) for the module map and planned changes.
 
 ## Roadmap
