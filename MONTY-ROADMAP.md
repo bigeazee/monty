@@ -4,17 +4,19 @@ This document captures the next planned features for Monty, along with enough
 design context that work can resume after a long break, in a different tool, or
 by a different person without losing intent.
 
-The current state of the app is **a single HTML file (~135 KB)** with all
-styles and JavaScript inline, persisting state in `window.localStorage`. The
-constraint going forward is: **it must continue to work by opening one HTML
-file, with no build step or runtime dependencies**. Future refactors away from
-the single-file architecture remain on the table, but are deliberately deferred.
+The current state of the app is **three static files** — `index.html` (~13 KB
+shell), `monty.css` (~50 KB), and `monty.js` (~85 KB) — persisting state in
+`window.localStorage`. The constraint going forward is: **it must continue to
+work as static files with no build step or runtime dependencies**, deployable
+by dropping the directory onto any static host (or opening from `file://`).
 
 ---
 
 ## Current architecture
 
-- **Single HTML file** containing inline CSS and JS, wrapped in an IIFE
+- **Three static files**: `index.html` (shell), `monty.css` (styles), `monty.js`
+  (logic, wrapped in an IIFE). The script tag sits at end-of-body so the DOM
+  is parsed before it runs — no `defer` needed.
 - **State storage**: `window.localStorage` under key `monty_state_v1`
 - **No external runtime dependencies** beyond Google Fonts (Nunito Sans, JetBrains Mono)
 - **Charts**: hand-rolled inline SVG, no charting library
@@ -103,10 +105,10 @@ const MONTY_CONFIG = {
 ```
 
 Short aliases (`SIZES`, `DEFAULT_BASES`, etc) are bound just below
-`MONTY_CONFIG` and used throughout for readability. When `MONTY_CONFIG`
-is eventually extracted to its own file (likely the first split when
-the file outgrows a single-file architecture), the aliases can either
-be re-imported or replaced with full `MONTY_CONFIG.foo.bar` references.
+`MONTY_CONFIG` and used throughout for readability. If `MONTY_CONFIG` is
+ever extracted to its own file in a future split of `monty.js`, the
+aliases can either be re-imported or replaced with full
+`MONTY_CONFIG.foo.bar` references.
 
 ### Adding new modules
 
@@ -134,7 +136,7 @@ When a new feature lands:
   thousands of snapshots before this is a concern.
 
 **The one significant gotcha**: localStorage is keyed by file path on `file://`.
-So if a user renames `Monty.html` to `Monty-v2.html` they get fresh empty state.
+So if a user renames `index.html` to `monty-v2.html` they get fresh empty state.
 This is one of the strongest arguments for keeping JSON export/import polished -
 it's the only safe migration path between file copies.
 
@@ -216,9 +218,20 @@ Teal-tinted background, similar to the priority hint banner.
 3. On confirm, Monty:
    a. Ensures `state.results` is populated (runs the forecast if not - or refuses if no items)
    b. Captures the current full state + results as a JSON object
-   c. Reads its own HTML via `document.documentElement.outerHTML`
-   d. Embeds the JSON as a base64-encoded string in a `<script>` tag with id `monty-snapshot-data`
+   c. Builds a self-contained HTML document by **inlining `monty.css` and
+      `monty.js`** (fetched at export time) into a copy of the current DOM,
+      replacing the `<link rel="stylesheet" href="monty.css">` and
+      `<script src="monty.js"></script>` references with `<style>` and
+      `<script>` blocks
+   d. Embeds the snapshot JSON as a base64-encoded string in a `<script>` tag
+      with id `monty-snapshot-data`, placed **before** the inlined `monty.js`
+      so the boot code can detect it on load
    e. Triggers download as `monty-snapshot-YYYY-MM-DD-{slugified-title}.html`
+
+   Because export depends on `fetch()` reading `monty.css` and `monty.js`,
+   it works when the app is served (GitHub Pages, any static host) but is
+   blocked under `file://` in Chrome. From `file://` the export button
+   should detect the failure and show a clear message.
 
 ### Detection on load
 
@@ -236,15 +249,15 @@ present:
 
 - The embedded JSON includes the **already-computed `state.results`** -
   stakeholders never re-run the simulation. The numbers are frozen.
-- Inline SVG, fonts (CDN), and all logic survive the duplication. The HTML is
-  fully self-contained.
-- File size: original ~130 KB + state JSON (typically 50-200 KB depending on
-  simCount × items, since `r.overall.all` contains every simulated end time).
-  Consider stripping `r.overall.all` from the embedded snapshot - the
-  histogram only needs the binned counts. This saves significant size.
-  - **Decision needed**: strip the raw simulation array, or keep it so the
-    histogram retains full fidelity? Recommend stripping and pre-binning the
-    histogram to ~24 bins as part of snapshot creation.
+- Inline SVG, fonts (CDN), and all logic survive the duplication. After
+  inlining, the resulting HTML is fully self-contained — stakeholders can
+  open it from `file://` even though export itself requires a served origin.
+- File size: ~150 KB shell (inlined CSS + JS) + state JSON. With
+  `r.overall.all` stripped and pre-binned (see below), the JSON is typically
+  10-30 KB; without stripping, 50-200 KB depending on simCount × items.
+- The raw simulation array (`r.overall.all`) is stripped at export time and
+  replaced with pre-binned histogram counts. The histogram render path needs
+  to handle both shapes (raw array → bin on the fly, or pre-binned → use directly).
 - Test on `file://` opening, not just via dev server, since that's how
   stakeholders will use it.
 
@@ -522,6 +535,7 @@ Listed with priority for what to actually implement:
 If approaching this fresh:
 
 1. ~~**Structural prep** - module markers, IIFE, MONTY_CONFIG~~ **Done.** See "Code structure" above for the resulting layout.
+1a. ~~**File split** - extract `monty.css` and `monty.js` from the monolithic HTML.~~ **Done.** The repo is now three files; the rest of this document refers to `monty.js` rather than "the script block".
 2. **Feature 1: stakeholder export** - well-scoped, immediately useful, pressure-tests the snapshot mechanism that 2 and 3 will reuse. ~1 day.
 3. **Feature 3: actuals capture** - the highest-value feature long term. Schema and capture flow first, calibration views progressively. ~3-5 days for full version.
 4. **Feature 2: history** - with actuals in place, history becomes "snapshots tied to learning events" rather than "every run we ever did", which is more signal. ~2-3 days.
